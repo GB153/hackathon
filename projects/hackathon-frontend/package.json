@@ -34,9 +34,10 @@
     "@txnlab/use-wallet-react": "^4.0.0",
     "algosdk": "^3.0.0",
     "daisyui": "^5.3.7",
-    "notistack": "^3.0.1",
+    "notistack": "^3.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-router-dom": "^7.9.4",
     "tslib": "^2.6.2"
   },
   "scripts": {
