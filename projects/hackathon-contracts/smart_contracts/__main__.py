@@ -121,7 +121,7 @@ def build(output_dir: Path, contract_path: Path) -> Path:
         file.name for file in output_dir.glob("*.arc56.json")
     ]
 
-    client_file: str | None = None
+    client_file = None
     if not app_spec_file_names:
         logger.warning(
             "No '*.arc56.json' file found (likely a logic signature being compiled). Skipping client generation."

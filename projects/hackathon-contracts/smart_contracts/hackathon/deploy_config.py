@@ -1,5 +1,4 @@
 import logging
-
 import algokit_utils
 
 logger = logging.getLogger(__name__)
