@@ -1,29 +1,29 @@
 // src/components/Home.tsx
-import { useWallet } from '@txnlab/use-wallet-react'
-import React, { useState } from 'react'
-import ConnectWallet from './components/ConnectWallet'
-import Transact from './components/Transact'
-import AppCalls from './components/AppCalls'
+import { useWallet } from "@txnlab/use-wallet-react";
+import React, { useState } from "react";
+import ConnectWallet from "./components/algorand stuff/ConnectWallet";
+import Transact from "./components/algorand stuff/Transact";
+import AppCalls from "./components/algorand stuff/AppCalls";
 
 interface HomeProps {}
 
 const Home: React.FC<HomeProps> = () => {
-  const [openWalletModal, setOpenWalletModal] = useState<boolean>(false)
-  const [openDemoModal, setOpenDemoModal] = useState<boolean>(false)
-  const [appCallsDemoModal, setAppCallsDemoModal] = useState<boolean>(false)
-  const { activeAddress } = useWallet()
+  const [openWalletModal, setOpenWalletModal] = useState<boolean>(false);
+  const [openDemoModal, setOpenDemoModal] = useState<boolean>(false);
+  const [appCallsDemoModal, setAppCallsDemoModal] = useState<boolean>(false);
+  const { activeAddress } = useWallet();
 
   const toggleWalletModal = () => {
-    setOpenWalletModal(!openWalletModal)
-  }
+    setOpenWalletModal(!openWalletModal);
+  };
 
   const toggleDemoModal = () => {
-    setOpenDemoModal(!openDemoModal)
-  }
+    setOpenDemoModal(!openDemoModal);
+  };
 
   const toggleAppCallsModal = () => {
-    setAppCallsDemoModal(!appCallsDemoModal)
-  }
+    setAppCallsDemoModal(!appCallsDemoModal);
+  };
 
   return (
     <div className="hero min-h-screen bg-teal-400">
@@ -70,7 +70,7 @@ const Home: React.FC<HomeProps> = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;
