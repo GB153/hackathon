@@ -45,6 +45,51 @@ This is done by using Binance Test API to use accurate spots to convert to stabl
 
 * Currently only creator of project paypal (bussiness/personal) account has been tested
 
+
+## Smart contract
+
+This project is fundamentally underpiined by one large smart contract which is the essential element in ensuring that any one, crypto native or not, can have their finances enabled by the security and speed of the blockchain. In the path of **cd hackathon/projects/hackathon-contracts/smart_contracts/hackathon/src/hackathon/contract.py**, this smart contract creates a mapping of an email (sha56) to a wallet address that enables the user not to worry about any aspect of management such as mnemonic passwords and more. Once a user is approved, there are helper function that calculate minimum balance (_box_mbr_fee) to ensure it is able to be ready to deploy transactions as well as being wrapped in a box so that only an email is required to be part of Algorand. This was definitely a hard part of the project but it was so vital in ensuring that anyone can access crypto and not have to be an expert on the technology that underpins it!
+
+## Images
+
+### Landing Page
+![Landing Page](./images/landing.jpeg)
+*The initial entry point — a simple, visually appealing landing page that introduces the concept of on/off-ramp finance and invites users to sign up or log in.*
+
+---
+
+### Login Page
+![Login Page](./images/login.jpeg)
+*Login and registration page with Google OAuth and Firebase authentication integration. This abstracts wallet creation under the hood.*
+
+---
+
+### Dashboard
+![Dashboard](./images/dashboard.jpeg)
+*Custom dashboard view showing transaction summaries, PayPal linking status, and wallet analytics for the user.*
+
+---
+
+### Transfer Flow
+![Transfer Flow](./images/transfer.jpeg)
+*Transfer interface that connects PayPal sandbox accounts, enabling fiat-to-crypto and crypto-to-fiat transfers seamlessly via Binance as CEX.*
+
+
+## Playthrough
+
+### Demo Video (MP4)
+[ Watch the main demo video](./videos/demo_video.mp4)
+
+*This MP4 demo provides a concise visual overview of the system — highlighting smart contract deployment, on-chain wallet creation, and the fiat ↔ crypto flow in real time.*
+
+---
+
+### Full Playthrough (MOV)
+[ Watch the full playthrough video](./videos/playthrough.mov)
+
+*This longer recording shows the complete user experience from login to executing a PayPal-backed transfer and viewing the blockchain receipt, step-by-step through the working interface.*
+
+
 ## Next Steps
 
 This is an early-stage project that has not been fully completed -- end-to-end encryption will be the next step so that there is no knowledge of what is happening from the centralised CRUD app to ensure a quick, cheap and complete defi experience.

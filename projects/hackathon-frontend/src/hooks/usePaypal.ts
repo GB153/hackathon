@@ -89,7 +89,7 @@ export function usePaypal(backend?: string) {
     status,
     loading,
     err,
-    refresh: fetchStatus, // stable now
+    refresh: fetchStatus,
     payout,
     quoteFiat,
     fiatToUsdc,
