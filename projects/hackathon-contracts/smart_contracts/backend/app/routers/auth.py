@@ -1,5 +1,6 @@
 # app/routers/auth.py
 from __future__ import annotations
+from app.core.wallet import get_or_create_user_wallet
 
 import os
 import time
@@ -127,8 +128,7 @@ class PasswordLoginIn(BaseModel):
 def password_signup(payload: PasswordSignupIn):
     """
     Create a user with email/password.
-    - Fails with 409 if a user already exists (either password or Google).
-    - On success, sets session cookie and returns {"ok": True}.
+    Also provisions a LocalNet wallet + stores encrypted mnemonic + registers on-chain.
     """
     init_firebase_admin()
     email = payload.email.lower().strip()
@@ -136,7 +136,6 @@ def password_signup(payload: PasswordSignupIn):
     doc_ref = user_doc(email)
     snap = doc_ref.get()
     if snap.exists:
-        # If they already exist (with password or via Google), block duplicate creation for now.
         raise HTTPException(status_code=409, detail="User already exists")
 
     pw_hash = bcrypt.hashpw(
@@ -155,6 +154,15 @@ def password_signup(payload: PasswordSignupIn):
         merge=False,
     )
 
+    # 🔐 Ensure wallet exists (creates + encrypts mnemonic + registers on-chain)
+    try:
+        get_or_create_user_wallet(email)
+    except Exception as e:
+        # Non-fatal in dev/localnet; you can decide to fail hard instead.
+        users_coll().document(email).set(
+            {"walletBootstrapError": str(e), "updatedAt": time.time()}, merge=True
+        )
+
     token = create_session_token(email=email, sub=None, name=None, picture=None)
     resp = JSONResponse({"ok": True})
     set_session_cookie(resp, token)
@@ -164,11 +172,13 @@ def password_signup(payload: PasswordSignupIn):
 # -------------------------------------------------------------------
 # Email/Password: LOGIN
 # -------------------------------------------------------------------
+
+
 @router.post("/auth/login")
 def password_login(payload: PasswordLoginIn):
     """
     Verify email/password and set session cookie.
-    - 401 if user not found or password mismatch.
+    If a wallet is missing (legacy users), provision it now.
     """
     init_firebase_admin()
     email = payload.email.lower().strip()
@@ -183,6 +193,14 @@ def password_login(payload: PasswordLoginIn):
         payload.password.encode("utf-8"), stored_hash
     ):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    # 🔐 Backfill wallet if missing
+    try:
+        get_or_create_user_wallet(email)
+    except Exception as e:
+        users_coll().document(email).set(
+            {"walletBootstrapError": str(e), "updatedAt": time.time()}, merge=True
+        )
 
     token = create_session_token(
         email=email,
@@ -224,6 +242,7 @@ async def google_login(request: Request, next: Optional[str] = None):
 async def google_callback(request: Request):
     """
     Exchange code, upsert user in Firestore, mint session cookie, and redirect to the frontend.
+    Also ensures the user has a wallet provisioned/registered.
     """
     try:
         token = await oauth.google.authorize_access_token(request)
@@ -252,13 +271,19 @@ async def google_callback(request: Request):
             merge=True,
         )
 
+        # 🔐 Ensure wallet exists (creates + encrypts mnemonic + registers on-chain)
+        try:
+            get_or_create_user_wallet(email)
+        except Exception as e:
+            users_coll().document(email).set(
+                {"walletBootstrapError": str(e), "updatedAt": time.time()}, merge=True
+            )
+
         session_token = create_session_token(
             email=email, sub=sub, name=name, picture=picture
         )
 
-        # Pull next from the session (default back to /login)
         next_param = request.session.pop("oauth_next", f"{FRONTEND_ORIGIN}/dashboard")
-
         resp = RedirectResponse(url=f"{next_param}?ok=1", status_code=302)
         set_session_cookie(resp, session_token)
         return resp

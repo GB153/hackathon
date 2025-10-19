@@ -5,6 +5,9 @@
 /* ---break---*/
 @custom-variant dark (&:is(.dark *));
 
+/* -----------------------
+   Base document
+------------------------*/
 html,
 body {
   font-family:
@@ -176,6 +179,9 @@ body,
   }
 }
 
+/* -----------------------
+   Mailing list input
+------------------------*/
 input.mailing-input {
   background: transparent !important;
   color: #fff !important;
@@ -185,19 +191,16 @@ input.mailing-input {
   box-shadow: none !important;
   border: none !important;
   caret-color: #fa812f;
-  font-family: "Alpino", ui-sans-serif, system-ui !important; /* match your Tailwind font-display */
+  font-family: "Alpino", ui-sans-serif, system-ui !important;
   font-weight: 400 !important;
 }
-
 input.mailing-input::placeholder {
   color: rgba(255, 255, 255, 0.85) !important;
   opacity: 1;
 }
-
 input.mailing-input::selection {
   background: rgba(250, 129, 47, 0.4);
 }
-
 /* Prevent Apple contacts/QR button overlay */
 input.mailing-input::-webkit-contacts-auto-fill-button {
   visibility: hidden;
@@ -206,61 +209,51 @@ input.mailing-input::-webkit-contacts-auto-fill-button {
   position: absolute;
   right: 0;
 }
-
 /* WebKit/Safari/Chrome: kill the yellow/white autofill bg + force text color/font */
 input.mailing-input:-webkit-autofill,
 input.mailing-input:-webkit-autofill:hover,
 input.mailing-input:-webkit-autofill:focus {
   -webkit-text-fill-color: #fff !important;
-  -webkit-box-shadow: 0 0 0 1000px transparent inset !important; /* remove white/yellow */
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
   box-shadow: 0 0 0 1000px transparent inset !important;
   transition:
     background-color 9999s ease-out,
-    color 0s ease-in-out !important; /* keep transparent */
+    color 0s ease-in-out !important;
 }
-
-/* Ensure the first rendered line after autofill uses our font + size */
+/* Ensure first-line after autofill uses our font + size */
 input.mailing-input:-webkit-autofill::first-line {
   font-family: "Alpino", ui-sans-serif, system-ui !important;
   font-weight: 400 !important;
-  font-size: 1rem !important; /* align with text-lg; change to 1.25rem for text-xl etc. */
+  font-size: 1rem !important;
 }
-
 /* Firefox: remove autofill background */
 input.mailing-input:-moz-autofill {
   box-shadow: 0 0 0 1000px transparent inset !important;
   -moz-text-fill-color: #fff !important;
 }
-
-/* iOS Safari blue inner shadow/token ring */
 input.mailing-input:focus {
   box-shadow: none !important;
 }
-
-/* Defensive: never let UA background leak in */
-input.mailing-input::-webkit-input-placeholder {
-  background: transparent !important;
-}
-input.mailing-input:-ms-input-placeholder {
-  background: transparent !important;
-}
+input.mailing-input::-webkit-input-placeholder,
+input.mailing-input:-ms-input-placeholder,
 input.mailing-input::-ms-input-placeholder {
   background: transparent !important;
 }
-
 input.mailing-input {
   color-scheme: dark;
 }
-
 input.mailing-input:-webkit-autofill::first-line {
-  font-size: 1.125rem !important; /* text-lg */
+  font-size: 1.125rem !important;
 }
 @media (min-width: 640px) {
   input.mailing-input:-webkit-autofill::first-line {
-    font-size: 1.25rem !important; /* text-xl */
+    font-size: 1.25rem !important;
   }
 }
 
+/* -----------------------
+   Login/Signup inputs
+------------------------*/
 input.login-input {
   background: transparent !important;
   color: #fa812f !important;
@@ -277,7 +270,6 @@ input.login-input::placeholder {
   color: rgba(250, 129, 47, 0.6) !important;
   opacity: 1;
 }
-
 /* Kill WebKit autofill yellow/white */
 input.login-input:-webkit-autofill,
 input.login-input:-webkit-autofill:hover,
@@ -292,39 +284,40 @@ input.login-input:-webkit-autofill:focus {
 input.login-input:-webkit-autofill::first-line {
   font-family: "Alpino", ui-sans-serif, system-ui !important;
   font-weight: 400 !important;
-  font-size: 1rem !important; /* matches default input size; tweak if you upsize */
+  font-size: 1rem !important;
 }
-
 /* Firefox autofill */
 input.login-input:-moz-autofill {
   box-shadow: 0 0 0 1000px transparent inset !important;
   -moz-text-fill-color: #fa812f !important;
 }
 
-/* --- Text selection color
+/* -----------------------
+   Selection + focus
+------------------------*/
 ::selection {
   background: #fa812f;
   color: #fff;
 }
-
-/* For inputs specifically
 input.login-input::selection {
   background: #fa812f;
   color: #fff;
 }
-
-/* For placeholder selection
-input.login-input::placeholder::selection {
-  background: #fa812f;
-  color: #fff;
+/* Universal orange focus ring */
+*:focus-visible {
+  outline: 2px solid #fa812f;
+  outline-offset: 2px;
 }
 
-/* ---break---*/
+/* -----------------------
+   Theme token bridge for shadcn
+------------------------*/
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -343,11 +336,13 @@ input.login-input::placeholder::selection {
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -357,42 +352,63 @@ input.login-input::placeholder::selection {
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
-/* ---break---*/
+
+/* -----------------------
+   Radcliffe theme (orange / cream)
+------------------------*/
+
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+
+  /* brand */
+  --rad-orange: #fa812f;
+  --rad-cream: #ffedc5;
+  --rad-ink: #331a00;
+
+  /* surfaces */
+  --rad-surface: color-mix(in oklab, white 70%, var(--rad-cream));
+  --rad-border: color-mix(in oklab, var(--rad-orange) 35%, #0000);
+
+  /* map to shadcn tokens */
+  --background: var(--rad-cream);
+  --foreground: var(--rad-ink);
+  --card: var(--rad-surface);
+  --card-foreground: var(--rad-ink);
+  --popover: var(--rad-surface);
+  --popover-foreground: var(--rad-ink);
+  --primary: var(--rad-orange);
+  --primary-foreground: #ffffff;
+  --secondary: color-mix(in oklab, var(--rad-cream) 88%, white);
+  --secondary-foreground: var(--rad-ink);
+  --muted: var(--rad-cream);
+  --muted-foreground: color-mix(in oklab, var(--rad-ink) 70%, #0000);
+  --accent: var(--rad-cream);
+  --accent-foreground: var(--rad-ink);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  --border: var(--rad-border);
+  --input: var(--rad-border);
+  --ring: var(--rad-orange);
+
+  /* charts (nice spread) */
+  --chart-1: oklch(0.7 0.18 40); /* orange-ish */
+  --chart-2: oklch(0.62 0.11 185); /* teal */
+  --chart-3: oklch(0.5 0.12 250); /* indigo */
+  --chart-4: oklch(0.82 0.18 95); /* lime */
+  --chart-5: oklch(0.76 0.19 70); /* amber */
+
+  /* sidebar */
+  --sidebar: var(--rad-cream);
+  --sidebar-foreground: var(--rad-ink);
+  --sidebar-primary: var(--rad-orange);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--rad-cream);
+  --sidebar-accent-foreground: var(--rad-ink);
+  --sidebar-border: var(--rad-border);
+  --sidebar-ring: var(--rad-orange);
 }
-/* ---break---*/
+
+/* Dark mode (optional look) */
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -412,11 +428,13 @@ input.login-input::placeholder::selection {
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
+
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
+
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -426,7 +444,10 @@ input.login-input::placeholder::selection {
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
-/* ---break---*/
+
+/* -----------------------
+   Tailwind base layer hooks
+------------------------*/
 @layer base {
   * {
     @apply border-border outline-ring/50;

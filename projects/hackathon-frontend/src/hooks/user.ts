@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 type Me = { email: string; name?: string; picture?: string } | null;
 
 export function useMe() {
-  const backend = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  const backend = import.meta.env.VITE_API_BASE_URL;
   const [user, setUser] = useState<Me>(null);
   const [loading, setLoading] = useState(true);
 

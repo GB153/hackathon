@@ -13,7 +13,7 @@ export default function MailingList() {
 
   const hasContent = email.trim().length > 0;
 
-  const apiBase = import.meta.env.VITE_API_BASE_URL || "";
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
   const endpoint = `${apiBase}/subscribe`;
 
   const isValid = useMemo(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email), [email]);

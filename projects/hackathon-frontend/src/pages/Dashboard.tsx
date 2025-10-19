@@ -1,107 +1,103 @@
 import React from "react";
-import Button from "@/components/Button";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SectionCards } from "@/components/section-cards";
+import { ChartAreaInteractive } from "@/components/chart-area-interactive";
+import { DataTable } from "@/components/data-table";
+import RButton from "@/components/Button"; // alias to your Radcliffe button
 import { useMe } from "@/hooks/user";
+import { SidebarTrigger } from "@/components/ui/sidebar"; // shadcn’s trigger
+
+const demoData: any[] = [];
 
 export default function Dashboard() {
   const { user, loading, backend } = useMe();
 
-  // if unauth when loading finishes → go to /login
+  // redirect to login if no session
   React.useEffect(() => {
-    if (!loading && user === null) {
-      window.location.replace("/login");
-    }
+    if (!loading && !user) window.location.href = "/login";
   }, [loading, user]);
 
-  async function handleLogout() {
-    try {
-      await fetch(`${backend}/auth/logout`, { method: "POST", credentials: "include" });
-    } finally {
-      window.location.href = "/login";
-    }
-  }
-
-  if (loading || user === null) {
+  if (loading || !user) {
     return (
-      <div className="min-h-screen theme-radcliffe bg-[var(--background)] text-[var(--foreground)] font-display flex items-center justify-center">
-        <div className="text-lg">Loading…</div>
+      <div className="min-h-screen grid place-items-center bg-[var(--rad-cream)] text-[var(--rad-orange)]">
+        <div className="animate-pulse font-display">Loading your dashboard…</div>
       </div>
     );
   }
 
-  const displayName = user?.name || user?.email || "Friend";
+  const displayName = user.name || user.email;
 
   return (
-    <div className="min-h-screen theme-radcliffe bg-[var(--background)] text-[var(--foreground)] font-display">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 lg:px-6 py-4 border-b" style={{ borderColor: "var(--border)" }}>
-        <div className="flex items-center gap-3">
-          <img src="/logo.svg" className="h-8 w-auto" alt="Radcliffe" />
-          <div className="text-xl">Welcome, {displayName}</div>
-        </div>
-        <div className="flex items-center gap-3">
-          {user?.picture && <img src={user.picture} className="h-8 w-8 rounded-full object-cover" alt="avatar" />}
-          <Button label="Logout" onClick={handleLogout} />
-        </div>
-      </header>
+    <SidebarProvider
+      defaultOpen
+      style={
+        {
+          "--sidebar-width": "288px",
+          "--header-height": "72px",
+        } as React.CSSProperties
+      }
+    >
+      {/* Sidebar */}
+      <AppSidebar className="bg-[var(--rad-cream)] text-[var(--rad-orange)] border-r rad-border" />
 
-      {/* Main */}
-      <main className="px-4 lg:px-6 py-6 space-y-6">
-        {/* Cards */}
-        <section className="grid gap-4 md:grid-cols-3">
-          <Card title="Status" value="All systems nominal" />
-          <Card title="Projects" value="3 active" />
-          <Card title="Notifications" value="0 unread" />
-        </section>
+      {/* Main content */}
+      <SidebarInset className="bg-[var(--rad-cream)] min-h-screen">
+        {/* Sticky site header */}
+        <SiteHeader className="sticky top-0 z-10 h-[var(--header-height)] bg-[var(--rad-cream)]/80 backdrop-blur border-b rad-border">
+          <div className="flex items-center gap-3 w-full px-4">
+            {/* Sidebar trigger */}
+            <SidebarTrigger className="shrink-0" />
 
-        {/* Chart placeholder */}
-        <section className="rounded-2xl border bg-[var(--card)] p-6" style={{ borderColor: "var(--border)" }}>
-          <div className="mb-3 text-lg">Overview</div>
-          <div className="h-48 rounded-xl border border-dashed flex items-center justify-center" style={{ borderColor: "var(--border)" }}>
-            <span className="text-[var(--muted-foreground)]">Chart goes here</span>
+            {/* Page title */}
+            <h1 className="ml-2 text-xl font-display text-[var(--rad-orange)]">Dashboard</h1>
+
+            {/* Right actions */}
+            <div className="ml-auto flex items-center gap-4">
+              <span className="hidden sm:inline text-[var(--rad-ink)]/80">
+                Hi, <strong className="text-[var(--rad-orange)]">{displayName}</strong>
+              </span>
+              <RButton
+                label="Logout"
+                className="!bg-[var(--rad-orange)] !text-white rounded-xl px-4 py-2"
+                onClick={async () => {
+                  try {
+                    await fetch(`${backend}/users/logout`, {
+                      method: "POST",
+                      credentials: "include",
+                    });
+                  } finally {
+                    window.location.href = "/login";
+                  }
+                }}
+              />
+            </div>
           </div>
-        </section>
+        </SiteHeader>
 
-        {/* Table placeholder */}
-        <section className="rounded-2xl border bg-[var(--card)] p-4" style={{ borderColor: "var(--border)" }}>
-          <div className="mb-3 text-lg">Recent activity</div>
-          <div className="overflow-x-auto">
-            <table className="min-w-[640px] w-full border-separate border-spacing-y-2">
-              <thead>
-                <tr className="text-left text-sm text-[var(--muted-foreground)]">
-                  <th className="px-3 py-2">Item</th>
-                  <th className="px-3 py-2">Date</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { item: "Alpha", date: "Today", status: "OK" },
-                  { item: "Beta", date: "Yesterday", status: "OK" },
-                ].map((r, i) => (
-                  <tr key={i} className="bg-[var(--background)] rounded-xl">
-                    <td className="px-3 py-2 rounded-l-xl">{r.item}</td>
-                    <td className="px-3 py-2">{r.date}</td>
-                    <td className="px-3 py-2">{r.status}</td>
-                    <td className="px-3 py-2 rounded-r-xl text-right">
-                      <Button label="Open" onClick={() => alert(`Open ${r.item}`)} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Content sections */}
+        <div className="flex-1 flex flex-col gap-6 py-6">
+          {/* Cards row */}
+          <div className="px-4 lg:px-6">
+            <SectionCards className="[&_.card]:bg-white [&_.card]:border rad-border" />
           </div>
-        </section>
-      </main>
-    </div>
-  );
-}
 
-function Card({ title, value }: { title: string; value: string }) {
-  return (
-    <div className="rounded-2xl border p-4 bg-[var(--card)]" style={{ borderColor: "var(--border)" }}>
-      <div className="text-sm text-[var(--muted-foreground)] mb-1">{title}</div>
-      <div className="text-2xl">{value}</div>
-    </div>
+          {/* Interactive chart */}
+          <div className="px-4 lg:px-6">
+            <div className="rad-surface border rad-border rounded-2xl p-4">
+              <ChartAreaInteractive />
+            </div>
+          </div>
+
+          {/* Data table */}
+          <div className="px-4 lg:px-6">
+            <div className="rad-surface border rad-border rounded-2xl p-2">
+              <DataTable data={demoData} />
+            </div>
+          </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

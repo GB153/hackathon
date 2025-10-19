@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function Signup() {
-  const backend = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  const backend = import.meta.env.VITE_API_BASE_URL;
 
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
