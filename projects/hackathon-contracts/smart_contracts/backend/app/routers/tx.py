@@ -27,12 +27,14 @@ def tx_history(user=Depends(get_current_user)):
     items = []
     for tx in res.get("transactions", []):
         asa = tx.get("asset-transfer-transaction")
-        if not asa:  # only ASA transfers
+        if not asa:
             continue
+
         amount = asa.get("amount", 0)
         sender = tx.get("sender")
         receiver = asa.get("receiver")
         direction = "OUT" if sender == addr else "IN"
+
         note_raw = tx.get("note")
         note = None
         if note_raw:
@@ -40,6 +42,11 @@ def tx_history(user=Depends(get_current_user)):
                 note = json.loads(base64.b64decode(note_raw).decode("utf-8"))
             except Exception:
                 note = None
+
+        # Pull exchange & rate if present in note
+        bin_meta = (note or {}).get("binance", {}) if note else {}
+        exchange = bin_meta.get("mode") or bin_meta.get("venue") or None
+        price = bin_meta.get("priceUSDCUSDT")
 
         items.append(
             {
@@ -54,6 +61,8 @@ def tx_history(user=Depends(get_current_user)):
                 },
                 "from": sender,
                 "to": receiver,
+                "exchange": exchange,  # e.g. "spot-testnet"
+                "rate_usdt_per_usdc": price,  # string like "1.000012"
                 "note": note,
             }
         )

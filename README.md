@@ -1,20 +1,21 @@
 # hackathon
 
-This starter full stack project has been generated using AlgoKit. See below for default getting started instructions.
+This code has been written solely during the hackathon timeframe. There has been AI-Generated Code and some open-source samples have been used from the following sources:
+
+- Shadcn/UI
+- MagicUI
+- CodePen
 
 ## Setup
 
-### Initial setup
-1. Clone this repository to your local machine.
-2. Ensure [Docker](https://www.docker.com/) is installed and operational. Then, install `AlgoKit` following this [guide](https://github.com/algorandfoundation/algokit-cli#install).
-3. Run `algokit project bootstrap all` in the project directory. This command sets up your environment by installing necessary dependencies, setting up a Python virtual environment, and preparing your `.env` file.
-4. In the case of a smart contract project, execute `algokit generate env-file -a target_network localnet` from the `hackathon-contracts` directory to create a `.env.localnet` file with default configuration for `localnet`.
-5. To build your project, execute `algokit project run build`. This compiles your project and prepares it for running.
-6. For project-specific instructions, refer to the READMEs of the child projects:
-   - Smart Contracts: [hackathon-contracts](projects/hackathon-contracts/README.md)
-   - Frontend Application: [hackathon-frontend](projects/hackathon-frontend/README.md)
+To run this project there are three areas of setup --- it is advised to have three terminals open to make it easier
+to manage.
 
-> This project is structured as a monorepo, refer to the [documentation](https://github.com/algorandfoundation/algokit-cli/blob/main/docs/features/project/run.md) to learn more about custom command orchestration via `algokit project run`.
+1. Using cd hackathon/projects/hackathon-frontend please run **npm run dev** to run the frontend environment which will be found at default
+   location of **http://localhost:5173**
+2. Using cd hackathon-contracts/smart-contracts/backend please run **npm run dev** to run the frontend environment which will be found at default
+   location of **http://localhost:5173**
+3. At root level run **alogkit localnet start** to initiate a local version of algorand blockchain
 
 ### Subsequently
 
@@ -29,17 +30,21 @@ This project makes use of Python and React to build Algorand smart contracts and
 - Python dependencies including Poetry, Black, Ruff or Flake8, mypy, pytest, and pip-audit
 - React and related dependencies including AlgoKit Utils, Tailwind CSS, daisyUI, use-wallet, npm, jest, playwright, Prettier, ESLint, and Github Actions workflows for build validation
 
-### VS Code
 
-It has also been configured to have a productive dev experience out of the box in [VS Code](https://code.visualstudio.com/), see the [backend .vscode](./backend/.vscode) and [frontend .vscode](./frontend/.vscode) folders for more details.
+## Features
 
-## Integrating with smart contracts and application clients
+This features a landing page that can run -- a mailing list has been adeded which links to Firebase under the hood to capture within a collection
 
-Refer to the [hackathon-contracts](projects/hackathon-contracts/README.md) folder for overview of working with smart contracts, [projects/hackathon-frontend](projects/hackathon-frontend/README.md) for overview of the React project and the [projects/hackathon-frontend/contracts](projects/hackathon-frontend/src/contracts/README.md) folder for README on adding new smart contracts from backend as application clients on your frontend. The templates provided in these folders will help you get started.
-When you compile and generate smart contract artifacts, your frontend component will automatically generate typescript application clients from smart contract artifacts and move them to `frontend/src/contracts` folder, see [`generate:app-clients` in package.json](projects/hackathon-frontend/package.json). Afterwards, you are free to import and use them in your frontend application.
+Most of navbar remains incomplete but login button is fully functional as Google Auth/OAuth has been configued to use Google Sign Up/Log in or email and password. It works with firebase too. This will then take you to a custom dashboard. The dashboard features primarily dummy data but analytics tracks user transactions that have been completed on radcliffe platform
 
-The frontend starter also provides an example of interactions with your HackathonClient in [`AppCalls.tsx`](projects/hackathon-frontend/src/components/AppCalls.tsx) component by default.
+Moreover, the complexity lies under the hood. When a user creates an account -- a wallet is created automatically on the blockchain for that user, abstracing all complexity inculding mnemonic phrase.
+
+A user is actually able to complete transactions on teh platform using only fiat! For now, it remains using a sandboxed Paypal environment which is requested when Transfer is attempted by clicking Transfer. Then, the user is able to transer fiat directly to another fiat wallet all powered by crypto. It has all been abstracted the user only has to know what the target email is and their own!
+
+This is done by using Binance Test API to use accurate spots to convert to stablecoins and kept in the wallet before then being converted into fiat once again and transfered into user's other sandboxed paypal account*. This enables for the transaction to be recorded as well as recipient, amount fee and more which is fed into the analytics page on the website.
+
+* Currently only creator of project paypal (bussiness/personal) account has been tested
 
 ## Next Steps
 
-You can take this project and customize it to build your own decentralized applications on Algorand. Make sure to understand how to use AlgoKit and how to write smart contracts for Algorand before you start.
+This is an early-stage project that has not been fully completed -- end-to-end encryption will be the next step so that there is no knowledge of what is happening from the centralised CRUD app to ensure a quick, cheap and complete defi experience.

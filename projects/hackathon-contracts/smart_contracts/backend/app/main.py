@@ -10,6 +10,9 @@ from app.routers import paypal as paypal_api_router
 from app.routers import paypal_link as paypal_link_api
 from app.routers import ramp as ramp_router
 from app.routers import tx as tx_router
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 app = FastAPI(title="Hackathon Backend")

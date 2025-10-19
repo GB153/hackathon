@@ -33,10 +33,18 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="offcanvas" {...props}>
       {/* Logo header */}
       <SidebarHeader className="p-2 pb-0">
-        <div className="flex items-center pl-2">
-          <img src="/logo.svg" alt="Radcliffe" className="h-24 w-auto select-none pointer-events-none" draggable={false} />
+        <div className="h-12 overflow-visible">
+          <div className="flex items-center h-full">
+            <div className="px-2">
+              <img
+                src="/logo.svg"
+                alt="Radcliffe"
+                className="h-16 w-auto select-none pointer-events-none -translate-y-[4px]"
+                draggable={false}
+              />
+            </div>
+          </div>
         </div>
-        <div className="mt-1" />
       </SidebarHeader>
 
       {/* Navigation */}
