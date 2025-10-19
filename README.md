@@ -1,10 +1,6 @@
 # hackathon
 
-This code has been written solely during the hackathon timeframe. There has been AI-Generated Code and some open-source samples have been used from the following sources:
-
-- Shadcn/UI
-- MagicUI
-- CodePen
+first attempt at a hackathon
 
 ## Setup
 
