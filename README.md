@@ -75,21 +75,6 @@ This project is fundamentally underpiined by one large smart contract which is t
 *Transfer interface that connects PayPal sandbox accounts, enabling fiat-to-crypto and crypto-to-fiat transfers seamlessly via Binance as CEX.*
 
 
-## Playthrough
-
-### Demo Video (MP4)
-[ Watch the main demo video](./videos/demo_video.mp4)
-
-*This MP4 demo provides a concise visual overview of the system — highlighting smart contract deployment, on-chain wallet creation, and the fiat ↔ crypto flow in real time.*
-
----
-
-### Full Playthrough (MOV)
-[ Watch the full playthrough video](./videos/playthrough.mov)
-
-*This longer recording shows the complete user experience from login to executing a PayPal-backed transfer and viewing the blockchain receipt, step-by-step through the working interface.*
-
-
 ## Next Steps
 
 This is an early-stage project that has not been fully completed -- end-to-end encryption will be the next step so that there is no knowledge of what is happening from the centralised CRUD app to ensure a quick, cheap and complete defi experience.
