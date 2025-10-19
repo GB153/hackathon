@@ -39,7 +39,7 @@ Most of navbar remains incomplete but login button is fully functional as Google
 
 Moreover, the complexity lies under the hood. When a user creates an account -- a wallet is created automatically on the blockchain for that user, abstracing all complexity inculding mnemonic phrase.
 
-A user is actually able to complete transactions on teh platform using only fiat! For now, it remains using a sandboxed Paypal environment which is requested when Transfer is attempted by clicking Transfer. Then, the user is able to transer fiat directly to another fiat wallet all powered by crypto. It has all been abstracted the user only has to know what the target email is and their own!
+A user is actually able to complete transactions on the platform using only fiat! For now, it remains using a sandboxed Paypal environment which is requested when Transfer is attempted by clicking Transfer. Then, the user is able to transer fiat directly to another fiat wallet all powered by crypto. It has all been abstracted the user only has to know what the target email is and their own!
 
 This is done by using Binance Test API to use accurate spots to convert to stablecoins and kept in the wallet before then being converted into fiat once again and transfered into user's other sandboxed paypal account*. This enables for the transaction to be recorded as well as recipient, amount fee and more which is fed into the analytics page on the website.
 
