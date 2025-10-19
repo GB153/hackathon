@@ -42,7 +42,7 @@ export function usePaypal(backend?: string) {
         body: JSON.stringify({
           email: params.toEmail,
           amount: params.amount,
-          currency: params.currency ?? "USD",
+          currency: params.currency ?? "GBP",
           note: params.note,
         }),
       });

@@ -113,7 +113,7 @@ export default function TransferDialog({ open, onOpenChange }: Props) {
       const isLinked = await ensureLinkedLive();
       if (!isLinked) throw new Error("Please connect your account first.");
 
-      if (!AMOUNT_RE.test(amount.trim())) throw new Error("Enter a valid USD amount (e.g., 10 or 10.50).");
+      if (!AMOUNT_RE.test(amount.trim())) throw new Error("Enter a valid GBP amount (e.g., 10 or 10.50).");
       if (!toEmail.trim()) throw new Error("Recipient email required.");
 
       // 1) Quote (UI + for receipt)
@@ -126,7 +126,7 @@ export default function TransferDialog({ open, onOpenChange }: Props) {
       const pay = await payout({
         toEmail: toEmail.trim(),
         amount: amount.trim(),
-        currency: "USD",
+        currency: "GBP",
         note: note.trim() || undefined,
       });
       setSteps((s) => ({ ...s, payout: "done" }));
@@ -230,7 +230,7 @@ export default function TransferDialog({ open, onOpenChange }: Props) {
 
             {/* Amount */}
             <div className="space-y-1.5">
-              <Label className="text-[#FA812F]">Amount (USD)</Label>
+              <Label className="text-[#FA812F]">Amount (GBP)</Label>
               <Input
                 inputMode="decimal"
                 placeholder="0.00"

@@ -91,8 +91,6 @@ def fiat_to_usdc(payload: MintIn, user=Depends(get_current_user)):
     _opt_in_if_needed(user_wallet_addr, acct.signer.private_key, asset_id)
 
     usd_amount = float(payload.usd)
-
-    # Optional: include pre-trade spot snapshot in receipt for transparency
     pre_quote = None
     try:
         pre_quote = spot_quote_usdc_from_usd(usd_amount)
@@ -134,7 +132,7 @@ def fiat_to_usdc(payload: MintIn, user=Depends(get_current_user)):
     except Exception:
         symbol = "USDCUSDT"
 
-    # 2) Enriched on-chain receipt
+    # Enriched on-chain receipt
     receipt = {
         "payer": {"email": user["email"], "paypal": payer_pp},
         "recipient": {
@@ -169,9 +167,9 @@ def fiat_to_usdc(payload: MintIn, user=Depends(get_current_user)):
         },
     }
     if pre_quote:
-        receipt["pre_quote"] = pre_quote  # last/bid/ask + expected_usdc (spot snapshot)
+        receipt["pre_quote"] = pre_quote
 
-    # 3) Mint & send LocalNet ASA
+    # Mint & send LocalNet ASA
     onchain = mint_and_send_usdc_dev(
         to_addr=user_wallet_addr,
         usdc_units=f"{executed_usdc:.6f}",

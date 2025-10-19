@@ -31,7 +31,7 @@ class OrderCreateIn(BaseModel):
 class PayoutIn(BaseModel):
     email: EmailStr
     amount: str = Field(..., pattern=r"^\d+(\.\d{1,2})?$")
-    currency: str = "USD"
+    currency: str = "GBP"
     note: Optional[str] = None
 
 
