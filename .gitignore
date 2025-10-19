@@ -121,6 +121,7 @@ celerybeat.pid
 
 # Environments
 .env
+.env.local
 .venv
 env/
 venv/
@@ -167,4 +168,3 @@ cython_debug/
 
 # NPM
 node_modules
-
