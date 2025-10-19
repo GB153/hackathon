@@ -1,23 +1,48 @@
+// src/pages/Dashboard.tsx
+"use client";
+
 import React from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SectionCards } from "@/components/section-cards";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
-import { DataTable } from "@/components/data-table";
-import RButton from "@/components/Button"; // alias to your Radcliffe button
+import RButton from "@/components/Button";
 import { useMe } from "@/hooks/user";
-import { SidebarTrigger } from "@/components/ui/sidebar"; // shadcn’s trigger
+import TransferDialog from "./TransferDialog";
 
-const demoData: any[] = [];
+type PaypalStatus = { linked: false } | { linked: true; email: string; merchant_id?: string };
 
 export default function Dashboard() {
   const { user, loading, backend } = useMe();
 
-  // redirect to login if no session
+  const [ppOpen, setPpOpen] = React.useState(false);
+  const [checkedPayPal, setCheckedPayPal] = React.useState(false);
+  const [isLinked, setIsLinked] = React.useState<boolean | null>(null);
+
+  // Redirect if not logged in
   React.useEffect(() => {
     if (!loading && !user) window.location.href = "/login";
   }, [loading, user]);
+
+  // On mount, check PayPal status and auto-open dialog if not linked
+  React.useEffect(() => {
+    if (!backend || !user || checkedPayPal) return;
+    (async () => {
+      try {
+        const r = await fetch(`${backend}/api/paypal/status`, { credentials: "include" });
+        if (!r.ok) throw new Error(String(r.status));
+        const j: PaypalStatus = await r.json();
+        const linked = j.linked === true;
+        setIsLinked(linked);
+        if (!linked) setPpOpen(true);
+      } catch {
+        setIsLinked(null);
+      } finally {
+        setCheckedPayPal(true);
+      }
+    })();
+  }, [backend, user, checkedPayPal]);
 
   if (loading || !user) {
     return (
@@ -45,35 +70,35 @@ export default function Dashboard() {
       {/* Main content */}
       <SidebarInset className="bg-[var(--rad-cream)] min-h-screen">
         {/* Sticky site header */}
-        <SiteHeader className="sticky top-0 z-10 h-[var(--header-height)] bg-[var(--rad-cream)]/80 backdrop-blur border-b rad-border">
-          <div className="flex items-center gap-3 w-full px-4">
-            {/* Sidebar trigger */}
-            <SidebarTrigger className="shrink-0" />
-
-            {/* Page title */}
-            <h1 className="ml-2 text-xl font-display text-[var(--rad-orange)]">Dashboard</h1>
-
-            {/* Right actions */}
-            <div className="ml-auto flex items-center gap-4">
-              <span className="hidden sm:inline text-[var(--rad-ink)]/80">
-                Hi, <strong className="text-[var(--rad-orange)]">{displayName}</strong>
-              </span>
-              <RButton
-                label="Logout"
-                className="!bg-[var(--rad-orange)] !text-white rounded-xl px-4 py-2"
-                onClick={async () => {
-                  try {
-                    await fetch(`${backend}/users/logout`, {
-                      method: "POST",
-                      credentials: "include",
-                    });
-                  } finally {
-                    window.location.href = "/login";
-                  }
-                }}
-              />
-            </div>
-          </div>
+        <SiteHeader
+          title="Dashboard"
+          className="sticky top-0 z-10 h-[var(--header-height)] bg-[var(--rad-cream)]/80 backdrop-blur border-b rad-border"
+        >
+          {!isLinked && backend && (
+            <button
+              className="px-3 py-2 rounded-xl border rad-border bg-white hover:bg-[var(--rad-cream)] transition text-[var(--rad-orange)]"
+              onClick={() => setPpOpen(true)}
+            >
+              Connect PayPal
+            </button>
+          )}
+          <span className="hidden sm:inline text-[var(--rad-ink)]/80">
+            Hi, <strong className="text-[var(--rad-orange)]">{displayName}</strong>
+          </span>
+          <RButton
+            label="Logout"
+            className="!bg-[var(--rad-orange)] !text-white rounded-xl px-4 py-2"
+            onClick={async () => {
+              try {
+                await fetch(`${backend}/users/logout`, {
+                  method: "POST",
+                  credentials: "include",
+                });
+              } finally {
+                window.location.href = "/login";
+              }
+            }}
+          />
         </SiteHeader>
 
         {/* Content sections */}
@@ -89,14 +114,10 @@ export default function Dashboard() {
               <ChartAreaInteractive />
             </div>
           </div>
-
-          {/* Data table */}
-          <div className="px-4 lg:px-6">
-            <div className="rad-surface border rad-border rounded-2xl p-2">
-              <DataTable data={demoData} />
-            </div>
-          </div>
         </div>
+
+        {/* PayPal connect / transfer dialog */}
+        <TransferDialog open={ppOpen} onOpenChange={setPpOpen} />
       </SidebarInset>
     </SidebarProvider>
   );

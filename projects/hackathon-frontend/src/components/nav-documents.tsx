@@ -1,7 +1,6 @@
 "use client";
 
 import { FolderIcon, MoreHorizontalIcon, ShareIcon, type LucideIcon } from "lucide-react";
-
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   SidebarGroup,
@@ -13,20 +12,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-export function NavDocuments({
-  items,
-}: {
-  items: {
-    name: string;
-    url: string;
-    icon: LucideIcon;
-  }[];
-}) {
+export function NavDocuments({ items, label = "Dashboard" }: { items: { name: string; url: string; icon: LucideIcon }[]; label?: string }) {
   const { isMobile } = useSidebar();
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>

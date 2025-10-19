@@ -5,7 +5,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.routers import waiting_list, auth
-from app.routers import user as user_router  # ⬅ add
+from app.routers import user as user_router
+from app.routers import paypal as paypal_api_router
+from app.routers import paypal_link as paypal_link_api
+from app.routers import ramp as ramp_router
+from app.routers import tx as tx_router
+
 
 app = FastAPI(title="Hackathon Backend")
 
@@ -39,3 +44,7 @@ def health():
 app.include_router(waiting_list.router)
 app.include_router(auth.router)
 app.include_router(user_router.router)
+app.include_router(paypal_api_router.router)
+app.include_router(paypal_link_api.router)
+app.include_router(ramp_router.router)
+app.include_router(tx_router.router)

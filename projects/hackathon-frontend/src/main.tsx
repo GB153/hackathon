@@ -5,6 +5,7 @@ import App from "./App";
 import Login from "./pages/Login";
 import Signup from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
+import Analytics from "./pages/Analytics";
 import "./styles/App.css";
 import ErrorBoundary from "./components/algorand_stuff/ErrorBoundary";
 
@@ -17,6 +18,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/analytics" element={<Analytics />} />
         </Routes>
       </BrowserRouter>
     </ErrorBoundary>

@@ -4,224 +4,317 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import Button from "@/components/Button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMe } from "@/hooks/user";
+import { usePaypal } from "@/hooks/usePaypal";
 
 type Props = { open: boolean; onOpenChange: (v: boolean) => void };
 
-type Balance = {
-  address: string;
-  algo: { total: number; spendable: number; minBalance: number };
-  asas: { id: number; name?: string; unit?: string; balance: number; decimals: number }[];
-};
+const AMOUNT_RE = /^\d+(\.\d{1,2})?$/;
+type StepKey = "quote" | "payout" | "mint";
+type StepState = "idle" | "active" | "done" | "error";
 
 export default function TransferDialog({ open, onOpenChange }: Props) {
-  const [loading, setLoading] = React.useState(false);
-  const [connecting, setConnecting] = React.useState(false);
-  const [balance, setBalance] = React.useState<Balance | null>(null);
-  const [assetType, setAssetType] = React.useState<"ALGO" | "ASA">("ALGO");
-  const [selectedAsa, setSelectedAsa] = React.useState<string>("");
-  const [to, setTo] = React.useState("");
+  const { backend } = useMe();
+  const { status, loading: ppLoading, err: ppErr, payout, refresh, quoteFiat, fiatToUsdc } = usePaypal(backend);
+
+  // Payout form state
+  const [toEmail, setToEmail] = React.useState("");
   const [amount, setAmount] = React.useState("");
+  const [note, setNote] = React.useState("");
+
+  // Link form (if not linked)
+  const [linkEmail, setLinkEmail] = React.useState("");
+  const [linking, setLinking] = React.useState(false);
+  const [linkMsg, setLinkMsg] = React.useState<string | null>(null);
+
+  // Flow state
+  const [sending, setSending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [progress, setProgress] = React.useState(0);
+  const [steps, setSteps] = React.useState<Record<StepKey, StepState>>({
+    quote: "idle",
+    payout: "idle",
+    mint: "idle",
+  });
 
-  async function fetchBalances() {
-    setError(null);
-    try {
-      const res = await fetch(`/api/wallet/balance`);
-      if (!res.ok) throw new Error(await res.text());
-      const data: Balance = await res.json();
-      setBalance(data);
-      if (data.asas.length && !selectedAsa) setSelectedAsa(String(data.asas[0].id));
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to load balance");
-    }
-  }
+  // Centered inner width for consistent layout
+  const shell = "mx-auto w-[80%]";
 
+  // reset on open
   React.useEffect(() => {
     if (!open) return;
-    setConnecting(true);
-    fetchBalances().finally(() => setConnecting(false));
-    setAssetType("ALGO");
-    setSelectedAsa("");
-    setTo("");
-    setAmount("");
     setError(null);
-  }, [open]);
+    setToEmail("");
+    setAmount("");
+    setNote("");
+    setLinkEmail("");
+    setLinkMsg(null);
+    setSteps({ quote: "idle", payout: "idle", mint: "idle" });
+    setProgress(0);
+    void refresh(); // check link each time dialog opens
+  }, [open]); // (refresh is stable in the updated hook)
 
-  function fillMax() {
-    if (!balance) return;
-    if (assetType === "ALGO") setAmount(String(balance.algo.spendable));
-    else if (assetType === "ASA" && selectedAsa) {
-      const a = balance.asas.find((x) => String(x.id) === selectedAsa);
-      if (a) setAmount(String(a.balance));
+  async function connectPaypal() {
+    if (!backend) return setLinkMsg("Backend URL missing");
+    try {
+      setLinking(true);
+      setLinkMsg(null);
+      const r = await fetch(`${backend}/api/paypal/connect`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paypal_email: linkEmail.trim() }),
+      });
+      if (!r.ok) {
+        const t = await r.text().catch(() => "");
+        throw new Error(t || `status ${r.status}`);
+      }
+      setLinkMsg("Connected. Loading…");
+      await refresh();
+      setTimeout(() => setLinkMsg(null), 800);
+    } catch (e: any) {
+      setLinkMsg(e?.message ?? "Failed to link account");
+    } finally {
+      setLinking(false);
     }
   }
 
-  async function submit() {
-    setLoading(true);
-    setError(null);
+  // Ensure link state *right now* (avoid stale hook state)
+  async function ensureLinkedLive(): Promise<boolean> {
+    if (!backend) return false;
     try {
-      const body =
-        assetType === "ALGO"
-          ? { to, amount: Number(amount), assetType: "ALGO" }
-          : { to, amount: Number(amount), assetType: "ASA", assetId: Number(selectedAsa) };
+      const r = await fetch(`${backend}/api/paypal/status`, { credentials: "include" });
+      if (!r.ok) return false;
+      const j = await r.json();
+      return !!j?.linked;
+    } catch {
+      return false;
+    }
+  }
 
-      const res = await fetch(`/api/transfer`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+  // 🎉 Imperative confetti launcher (no extra UI needed)
+  async function celebrate() {
+    const confetti = (await import("canvas-confetti")).default;
+    // two bursts from center
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.35 } });
+    setTimeout(() => {
+      confetti({ particleCount: 120, spread: 120, origin: { y: 0.35 } });
+    }, 180);
+  }
+
+  async function runFlow() {
+    try {
+      setSending(true);
+      setError(null);
+      setSteps({ quote: "active", payout: "idle", mint: "idle" });
+      setProgress(10);
+
+      // Always re-validate linkage right before executing
+      const isLinked = await ensureLinkedLive();
+      if (!isLinked) throw new Error("Please connect your account first.");
+
+      if (!AMOUNT_RE.test(amount.trim())) throw new Error("Enter a valid USD amount (e.g., 10 or 10.50).");
+      if (!toEmail.trim()) throw new Error("Recipient email required.");
+
+      // 1) Quote (UI + for receipt)
+      await quoteFiat(amount.trim());
+      setSteps((s) => ({ ...s, quote: "done" }));
+      setProgress(40);
+
+      // 2) PayPal payout
+      setSteps((s) => ({ ...s, payout: "active" }));
+      const pay = await payout({
+        toEmail: toEmail.trim(),
+        amount: amount.trim(),
+        currency: "USD",
+        note: note.trim() || undefined,
       });
-      if (!res.ok) throw new Error(await res.text());
-      onOpenChange(false);
+      setSteps((s) => ({ ...s, payout: "done" }));
+      setProgress(70);
+
+      const orderId = pay?.batch_header?.payout_batch_id || pay?.payout_batch_id || pay?.batchHeader?.payout_batch_id;
+
+      // 3) Mint & deposit to wallet + on-chain receipt
+      setSteps((s) => ({ ...s, mint: "active" }));
+      await fiatToUsdc({
+        usd: amount.trim(),
+        recipientPaypalEmail: toEmail.trim(),
+        orderId,
+      });
+      setSteps((s) => ({ ...s, mint: "done" }));
+      setProgress(100);
+
+      await celebrate(); // fire confetti on success
+      setTimeout(() => onOpenChange(false), 900);
     } catch (e: any) {
       setError(e?.message ?? "Transfer failed");
+      setSteps((s) => {
+        const next = { ...s };
+        (["mint", "payout", "quote"] as StepKey[]).forEach((k) => {
+          if (next[k] === "active") next[k] = "error";
+        });
+        return next;
+      });
     } finally {
-      setLoading(false);
+      setSending(false);
     }
+  }
+
+  const linked = status?.linked === true;
+  const fromEmail = linked && "email" in (status || {}) ? (status as any)?.email : "";
+
+  function StepChip({ label, state }: { label: string; state: StepState }) {
+    const base = "text-xs px-2 py-1 rounded-full border";
+    const map: Record<StepState, string> = {
+      idle: "border-[#FA812F]/30 text-[#FA812F]/70 bg-white",
+      active: "border-[#FA812F] text-white bg-[#FA812F]",
+      done: "border-emerald-500 text-emerald-700 bg-emerald-50",
+      error: "border-red-500 text-red-600 bg-red-50",
+    };
+    return <span className={`${base} ${map[state]}`}>{label}</span>;
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg rounded-3xl font-display bg-[#FFEDC5] text-[#FA812F] border border-[#FA812F]/30">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold font-display text-[#FA812F]">Transfer</DialogTitle>
-          <DialogDescription className="text-base font-display text-[#FA812F]/85">
-            Send ALGO or ASA securely using your connected Radcliffe wallet.
+      <DialogContent className="sm:max-w-md rounded-3xl font-display bg-[#FFEDC5] text-[#FA812F] border border-[#FA812F]/30">
+        <DialogHeader className={shell}>
+          <DialogTitle className="text-2xl font-bold text-[#FA812F]">Transfer</DialogTitle>
+          <DialogDescription className="text-sm leading-relaxed" style={{ color: "#F39F54" }}>
+            Send funds using your connected account. If your account isn’t connected yet, link it below.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Wallet + balances */}
-        <div className="rounded-2xl border border-[#FA812F]/40 p-4 bg-white/10 backdrop-blur-sm">
-          {connecting ? (
-            <div className="text-sm text-[#FA812F]/90 font-display">Loading balances…</div>
-          ) : balance ? (
-            <div className="space-y-2 text-[#FA812F] font-display">
-              <div className="text-xs opacity-70">Address</div>
-              <div className="font-mono text-xs break-all">{balance.address}</div>
+        {/* Fixed-length, centered progress bar */}
+        {(sending || steps.quote !== "idle" || steps.payout !== "idle" || steps.mint !== "idle") && (
+          <div className={`${shell} h-1 rounded-full bg-white/50 overflow-hidden mb-3`}>
+            <div className="h-1 bg-[#FA812F] transition-all" style={{ width: `${progress}%` }} aria-hidden />
+          </div>
+        )}
+        {(steps.quote !== "idle" || steps.payout !== "idle" || steps.mint !== "idle") && (
+          <div className={`${shell} flex gap-2 flex-wrap mb-3 justify-center`}>
+            <StepChip label="Quote" state={steps.quote} />
+            <StepChip label="Pay" state={steps.payout} />
+            <StepChip label="Deposit" state={steps.mint} />
+          </div>
+        )}
 
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <div className="opacity-70">ALGO total</div>
-                  <div className="font-medium">{balance.algo.total}</div>
-                </div>
-                <div>
-                  <div className="opacity-70">Spendable</div>
-                  <div className="font-medium">{balance.algo.spendable}</div>
-                </div>
-                <div>
-                  <div className="opacity-70">Min balance</div>
-                  <div className="font-medium">{balance.algo.minBalance}</div>
-                </div>
+        {/* Checking/linked states */}
+        {ppLoading ? (
+          <div className={`${shell} text-sm text-[#FA812F]/90`}>Checking account…</div>
+        ) : linked ? (
+          <div className={`${shell} space-y-4`}>
+            {/* FROM (read-only) */}
+            <div className="space-y-1.5">
+              <Label className="text-[#FA812F]">From</Label>
+              <Input
+                value={fromEmail || ""}
+                readOnly
+                className="rounded-2xl bg-white text-[#FA812F] border border-[#FA812F]/60 pointer-events-none"
+              />
+              <div className="text-xs" style={{ color: "#F39F54" }}>
+                Your linked account.
               </div>
-
-              {balance.asas.length > 0 && (
-                <div className="mt-2">
-                  <div className="opacity-70 text-sm mb-1">ASAs</div>
-                  <div className="max-h-28 overflow-auto text-sm space-y-1">
-                    {balance.asas.map((a) => (
-                      <div key={a.id} className="flex justify-between">
-                        <span>{a.name ?? a.unit ?? `ASA ${a.id}`}</span>
-                        <span className="font-medium">{a.balance}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
-          ) : (
-            <div className="text-sm text-red-600 font-display">No balance data.</div>
-          )}
-        </div>
 
-        {/* Asset pickers */}
-        <div className="grid grid-cols-2 gap-3 mt-4 text-[#FA812F] font-display">
-          <div className="space-y-1.5">
-            <Label className="text-[#FA812F] font-display">Asset</Label>
-            <Select value={assetType} onValueChange={(v: any) => setAssetType(v)}>
-              <SelectTrigger className="rounded-2xl border-[#FA812F]/60 text-[#FA812F]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALGO">ALGO</SelectItem>
-                <SelectItem value="ASA" disabled={!balance || balance.asas.length === 0}>
-                  ASA
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            {/* TO */}
+            <div className="space-y-1.5">
+              <Label className="text-[#FA812F]">To</Label>
+              <Input
+                type="email"
+                placeholder="personal-sbx@example.com"
+                value={toEmail}
+                onChange={(e) => setToEmail(e.target.value)}
+                className="rounded-2xl bg-white text-[#FA812F] placeholder-[#FA812F]/60 border border-[#FA812F]/60 focus:border-[#FA812F] focus:ring-0"
+              />
+            </div>
+
+            {/* Amount */}
+            <div className="space-y-1.5">
+              <Label className="text-[#FA812F]">Amount (USD)</Label>
+              <Input
+                inputMode="decimal"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="rounded-2xl bg-white text-[#FA812F] placeholder-[#FA812F]/60 border border-[#FA812F]/60 focus:border-[#FA812F] focus:ring-0"
+              />
+            </div>
+
+            {/* Note (optional) */}
+            <div className="space-y-1.5">
+              <Label className="text-[#FA812F]">Note (optional)</Label>
+              <Input
+                placeholder="Powering the world.."
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="rounded-2xl bg-white text-[#FA812F] placeholder-[#FA812F]/60 border border-[#FA812F]/60 focus:border-[#FA812F] focus:ring-0"
+              />
+            </div>
+
+            {/* Errors only (no raw JSON / success text) */}
+            {ppErr && <div className="text-sm text-red-600">{ppErr}</div>}
+            {error && <div className="text-sm text-red-600">{error}</div>}
+
+            {/* Footer */}
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => onOpenChange(false)}
+                className="
+                  relative inline-flex items-center justify-center
+                  rounded-2xl px-6 py-3 font-display
+                  bg-transparent text-red-500 border border-red-500
+                  shadow-[0_6px_0_0_rgba(220,38,38,0.4)] transition-all
+                  hover:translate-y-[1px] hover:shadow-[0_4px_0_0_rgba(220,38,38,0.4)]
+                  active:translate-y-[4px] active:shadow-[0_1px_0_0_rgba(220,38,38,0.4)]
+                "
+              >
+                Cancel
+              </button>
+              <Button
+                label={sending ? "Sending…" : "Send"}
+                onClick={runFlow}
+                disabled={sending || !toEmail.trim() || !AMOUNT_RE.test(amount.trim())}
+              />
+            </div>
           </div>
+        ) : (
+          // Not linked → inline connect form
+          <div className={`${shell} space-y-4`}>
+            <div className="space-y-1.5">
+              <Label className="text-[#FA812F]">Your account email</Label>
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                value={linkEmail}
+                onChange={(e) => setLinkEmail(e.target.value)}
+                className="rounded-2xl bg-white text-[#FA812F] placeholder-[#FA812F]/60 border border-[#FA812F]/60 focus:border-[#FA812F] focus:ring-0"
+              />
+              <div className="text-xs" style={{ color: "#F39F54" }}>
+                We’ll link this account for transfers.
+              </div>
+            </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-[#FA812F] font-display">Token</Label>
-            <Select
-              value={selectedAsa}
-              onValueChange={setSelectedAsa}
-              disabled={assetType !== "ASA" || !balance || balance.asas.length === 0}
-            >
-              <SelectTrigger className="rounded-2xl border-[#FA812F]/60 text-[#FA812F]">
-                <SelectValue placeholder="—" />
-              </SelectTrigger>
-              <SelectContent>
-                {(balance?.asas ?? []).map((a) => (
-                  <SelectItem key={a.id} value={String(a.id)}>
-                    {a.name ?? a.unit ?? `ASA ${a.id}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {ppErr && <div className="text-sm text-red-600">{ppErr}</div>}
+            {linkMsg && <div className="text-sm text-[#FA812F]">{linkMsg}</div>}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => onOpenChange(false)}
+                className="
+                  relative inline-flex items-center justify-center
+                  rounded-2xl px-6 py-3 font-display
+                  bg-transparent text-red-500 border border-red-500
+                  shadow-[0_6px_0_0_rgba(220,38,38,0.4)] transition-all
+                  hover:translate-y-[1px] hover:shadow-[0_4px_0_0_rgba(220,38,38,0.4)]
+                  active:translate-y-[4px] active:shadow-[0_1px_0_0_rgba(220,38,38,0.4)]
+                "
+              >
+                Cancel
+              </button>
+              <Button label={linking ? "Connecting…" : "Connect"} onClick={connectPaypal} disabled={linking || !linkEmail.trim()} />
+            </div>
           </div>
-        </div>
-
-        {/* Recipient + amount */}
-        <div className="space-y-1.5 mt-4 text-[#FA812F] font-display">
-          <Label className="text-[#FA812F] font-display">Recipient address</Label>
-          <Input
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            placeholder="ALGOs… address"
-            className="rounded-2xl bg-transparent text-[#FA812F] placeholder-[#FA812F]/60 border border-[#FA812F]/60 focus:border-[#FA812F] focus:ring-0 outline-none"
-          />
-        </div>
-
-        {/* Amount + Max */}
-        <div className="flex items-end gap-2 mt-4">
-          <div className="flex-1 space-y-1.5 text-[#FA812F] font-display">
-            <Label className="text-[#FA812F] font-display">Amount</Label>
-            <Input
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.0"
-              className="rounded-2xl bg-transparent text-[#FA812F] placeholder-[#FA812F]/60 border border-[#FA812F]/60 focus:border-[#FA812F] focus:ring-0 outline-none"
-            />
-          </div>
-          <Button label="Max" onClick={fillMax} className="!px-4 !py-2" />
-        </div>
-
-        {error && <div className="text-red-500 text-sm mt-2 font-display">{error}</div>}
-
-        {/* Footer buttons */}
-        <div className="flex justify-end gap-3 mt-6">
-          {/* Cancel: red theme, no orange */}
-          <button
-            onClick={() => onOpenChange(false)}
-            className="
-              relative inline-flex select-none items-center justify-center
-              rounded-2xl px-8 py-3 gap-3 font-display font-normal
-              bg-transparent text-red-500 border-[1px] border-red-500
-              shadow-[0_6px_0_0_rgba(220,38,38,0.4)]
-              transition-all duration-200 ease-out
-              hover:translate-y-[1px] hover:shadow-[0_4px_0_0_rgba(220,38,38,0.4)]
-              active:translate-y-[4px] active:shadow-[0_1px_0_0_rgba(220,38,38,0.4)]
-              focus:outline-none
-              touch-manipulation
-            "
-          >
-            Cancel
-          </button>
-
-          {/* Submit: orange default */}
-          <Button label={loading ? "Sending…" : "Send"} onClick={submit} disabled={loading || !amount || !to} />
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
