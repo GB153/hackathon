@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import logging
 import time
-from typing import Optional
 
 from algosdk import encoding as algo_encoding, mnemonic, transaction, logic
 

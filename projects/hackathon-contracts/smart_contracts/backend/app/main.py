@@ -1,26 +1,37 @@
+# app/main.py
 from __future__ import annotations
+
+from pathlib import Path
+import sys as _sys
+
+_SMART_CONTRACTS_ROOT = Path(__file__).resolve().parents[2]
+_HACKATHON_SRC = _SMART_CONTRACTS_ROOT / "hackathon" / "src"
+if str(_HACKATHON_SRC) not in _sys.path:
+    _sys.path.insert(0, str(_HACKATHON_SRC))
+# --------------------------------------------------------------------
+
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+from dotenv import load_dotenv
 
+# Routers (these may import from `hackathon`, which now resolves)
 from app.routers import waiting_list, auth
 from app.routers import user as user_router
 from app.routers import paypal as paypal_api_router
 from app.routers import paypal_link as paypal_link_api
 from app.routers import ramp as ramp_router
 from app.routers import tx as tx_router
-from dotenv import load_dotenv
 
 load_dotenv()
-
 
 app = FastAPI(title="Hackathon Backend")
 
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origin_regex=r"^http://(localhost|127\.0\.0\.1):\d+$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
